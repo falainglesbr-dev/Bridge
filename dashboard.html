@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        :root { 
+            --red: #c20000;
+            --dark-bg: #000000; 
+            --card-bg: #121212;
+            --text-main: #ffffff;
+            --text-sub: #b3b3b3;
+            --border: #333;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            opacity: 0; 
+            transition: opacity 0.8s ease-in-out; 
+        }
+
+        .fade-in { opacity: 1; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+
+        /* Badges de Status */
+        .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        
+        .badge { 
+            background: var(--card-bg);
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            border-bottom: 4px solid var(--red); 
+            transition: transform 0.3s ease;
+        }
+        .badge:hover { transform: translateY(-5px); }
+        .badge b { font-size: 1.2rem; color: var(--red); display: block; }
+        .badge small { color: var(--text-sub); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+
+        /* Cards Principais */
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 16px;
+            padding: 25px; 
+            margin-bottom: 20px; 
+        }
+        .card h3 { margin-top: 0; color: var(--text-main); font-size: 1rem; border-left: 5px solid var(--red); padding-left: 15px; margin-bottom: 15px; }
+        
+        .plano-estudos ul { padding-left: 20px; color: var(--text-sub); font-size: 14px; }
+        .plano-estudos li { margin-bottom: 8px; }
+
+        /* Gráfico */
+        #chart_div { width: 100%; height: 250px; background: transparent; }
+
+        /* Botões de Ação */
+        .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .btn { padding: 14px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s; cursor: pointer; border: none; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-red:hover { background: #a00000; transform: translateY(-3px); }
+        .btn-outline { border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--red); color: var(--red); }
+
+        /* Loading Overlay */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 999; }
+    </style>
+</head>
+<body onload="inicializar()">
+
+<div id="loading-screen">Carregando portal...</div>
+
+<div class="container">
+    <header>
+        <div>
+            <h2 style="margin:0">Olá, <span id="nome-aluno">...</span></h2>
+        </div>
+        <button onclick="logout()" class="btn" style="color:var(--text-sub); background: none; font-size: 14px;">Sair</button>
+    </header>
+
+    <div class="badge-grid">
+        <div class="badge"><small>NÍVEL</small><b id="b-nivel">...</b></div>
+        <div class="badge"><small>PERFIL</small><b id="b-perfil">...</b></div>
+        <div class="badge"><small>STATUS</small><b id="b-status">...</b></div>
+    </div>
+
+    <div class="card plano-estudos">
+        <h3>📚 Plano de Estudos</h3>
+        <p id="plano-desc" style="font-weight: 600; color: var(--red); margin-bottom: 10px;"></p>
+        <ul id="plano-lista"></ul>
+        <p id="plano-nivel" style="font-size: 12px; margin-top: 15px; color: var(--text-sub);"></p>
+    </div>
+
+    <div class="card">
+        <h3>📈 Sua Evolução (CEFR)</h3>
+        <div id="chart_div"></div>
+    </div>
+
+    <div class="footer-actions">
+        <a href="aulas.html" class="btn btn-red">Minhas Aulas</a>
+        <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca</a>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+    const token = sessionStorage.getItem('bridge_token');
+
+    // Proteção de Rota
+    if (!token) { window.location.href = "index.html"; }
+
+    async function inicializar() {
+        try {
+            const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const aluno = data.db.alunos[0];
+                
+                // Preencher Dados [cite: 208]
+                document.getElementById('nome-aluno').innerText = aluno.nome || "Aluno";
+                document.getElementById('b-nivel').innerText = aluno.ultimo_nivel || "N/A";
+                document.getElementById('b-perfil').innerText = aluno.perfil_ap || "N/A";
+                document.getElementById('b-status').innerText = aluno.status_matricula || "Ativo";
+
+                // Neurolinguística [cite: 209]
+                if (data.sugestoes) {
+                    document.getElementById('plano-desc').innerText = data.sugestoes.plano_recomendado;
+                    document.getElementById('plano-nivel').innerText = data.sugestoes.nivel_sugestao;
+                    document.getElementById('plano-lista').innerHTML = data.sugestoes.perfil_sugestoes.map(s => `<li>${s}</li>`).join('');
+                }
+
+                // Gráficos [cite: 210]
+                google.charts.load('current', {'packages':['corechart']});
+                google.charts.setOnLoadCallback(() => drawChart());
+
+                // Finalizar UI
+                document.getElementById('loading-screen').style.display = 'none';
+                document.body.classList.add('fade-in');
+            }
+        } catch (e) {
+            alert("Erro ao carregar dados. Tente fazer login novamente.");
+            logout();
+        }
+    }
+
+    function drawChart() {
+        // Dados Referenciais CEFR [cite: 212]
+        const data = google.visualization.arrayToDataTable([
+            ['Meses', 'Nível'],
+            ['0', 0], ['4', 1], ['9', 2], ['18', 3], ['30', 4]
+        ]);
+
+        const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        chart.draw(data, { 
+            curveType: 'function', 
+            colors: ['#c20000'], 
+            legend: 'none', 
+            backgroundColor: 'transparent',
+            hAxis: { textStyle: { color: '#b3b3b3' }, gridlines: { color: '#333' } },
+            vAxis: { 
+                textStyle: { color: '#b3b3b3' },
+                ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] 
+            },
+            chartArea: { width: '85%', height: '80%' }
+        });
+    }
+
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = "index.html";
+    }
+</script>
+</body>
+</html>
