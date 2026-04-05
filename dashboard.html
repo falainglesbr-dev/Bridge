@@ -162,32 +162,35 @@
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
-  
-  // Recupera token e senha da sessão (Necessário para a nova segurança)
-  const token = sessionStorage.getItem('bridge_token');
-  const senha = sessionStorage.getItem('bridge_key'); 
-
-  if (!token || !senha) { window.location.href = "index.html"; }
 
   async function inicializar() {
+    // 1. Puxa os dados da sessão dentro da função
+    const token = sessionStorage.getItem('bridge_token');
+    const senha = sessionStorage.getItem('bridge_key');
+
+    // 2. Se não existirem, aí sim redireciona
+    if (!token || !senha) {
+      window.location.href = "index.html";
+      return;
+    }
+
     try {
-      // Chamada com a nova proteção de senha
+      // 3. Chamada para o Google Apps Script
       const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
       const data = await response.json();
 
       if (data.success) {
         const a = data.db.alunos[0];
         
-        // RESTAURADO: Seus nomes originais de colunas da planilha
-        document.getElementById('nome-aluno').innerText = a.nome;
-        document.getElementById('b-nivel').innerText = a.ultimo_nivel; // Original
-        document.getElementById('b-perfil').innerText = a.perfil_ap;    // Original
-        document.getElementById('b-status').innerText = a.status_matricula; // Original
+        // Seus nomes originais preservados
+        document.getElementById('nome-aluno').innerText = a.nome || "Estudante";
+        document.getElementById('b-nivel').innerText = a.ultimo_nivel || "--";
+        document.getElementById('b-perfil').innerText = a.perfil_ap || "--";
+        document.getElementById('b-status').innerText = a.status_matricula || "--";
         document.getElementById('b-reagendar').innerText = a.reagendar || 0;
-        document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada'; // Original
-        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
+        document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
+        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback.';
 
-        // Mantém sua lógica original de sugestões locais
         gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
 
         google.charts.load('current', {'packages':['corechart']});
@@ -196,63 +199,18 @@
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('main-container').classList.add('fade-in');
       } else {
-        // Se o backend recusar a senha, volta para o login
+        // Se o servidor disser que a senha está errada
+        console.error("Erro no servidor:", data.message);
         logout();
       }
     } catch (e) { 
-      console.error("Erro na Dashboard:", e); 
-      logout(); 
+      console.error("Erro crítico na Dashboard:", e);
+      // Em vez de deslogar no erro de conexão, apenas avisa o usuário
+      document.querySelector('#loading-screen p').innerText = "Erro de conexão. Verifique sua internet.";
     }
   }
 
-  // Sua função original de sugestões (Preservada)
-  function gerarSugestoesLocal(perfil, nivel) {
-    const p = perfil ? perfil.toLowerCase() : "";
-    let sugestoes = [];
-    let titulo = "Foco em imersão e input compreensível";
-
-    if (p.includes("visual")) {
-      sugestoes = ["Utilizar Flashcards com imagens (Anki/Quizlet)", "Assistir vídeos com legendas em Inglês", "Mapas mentais para gramática"];
-    } else if (p.includes("auditivo")) {
-      sugestoes = ["Prática de Shadowing (repetir após o áudio)", "Escuta ativa de Podcasts (10min/dia)", "Gravar sua própria voz e comparar"];
-    } else {
-      sugestoes = ["Escrever exemplos reais do seu dia a dia", "Digitar textos ouvindo o áudio simultaneamente", "Interagir com ferramentas de IA via voz"];
-    }
-
-    document.getElementById('plano-desc').innerText = titulo;
-    document.getElementById('plano-lista').innerHTML = sugestoes.map(s => `<li>${s}</li>`).join('');
-    document.getElementById('plano-nivel').innerText = `Sugestão adaptada para o nível ${nivel}`;
-  }
-
-  // Funções de gráfico e calculadora (Preservadas sem alteração)
-  function drawChart() {
-    const data = google.visualization.arrayToDataTable([['Meses', 'Nível'], [0, 0], [4, 1], [9, 2], [18, 3], [30, 4]]);
-    const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-    chart.draw(data, { 
-      curveType: 'function', colors: ['#c20000'], legend: 'none', backgroundColor: 'transparent',
-      hAxis: { textStyle: { color: '#b3b3b3' }, gridlines: { color: '#333' } },
-      vAxis: { textStyle: { color: '#b3b3b3' }, ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] },
-      chartArea: { width: '85%', height: '80%' }
-    });
-  }
-
-  function calcularFluencia() {
-    const nivel = parseInt(document.getElementById('c-nivel').value);
-    const horas = parseFloat(document.getElementById('c-horas').value);
-    let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
-    const final = Math.ceil(meses / (horas || 1));
-    document.getElementById('calc-ui').style.display = 'none';
-    const resDiv = document.getElementById('calc-result');
-    resDiv.style.display = 'block';
-    resDiv.innerHTML = `Estimativa: ${final} meses para fluência plena.<br><button class="btn btn-outline" style="margin-top:10px; padding: 5px 15px; font-size: 11px" onclick="resetCalc()">Recalcular</button>`;
-  }
-
-  function resetCalc() {
-    document.getElementById('calc-ui').style.display = 'block';
-    document.getElementById('calc-result').style.display = 'none';
-  }
-
-  function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+  // ... (mantenha suas funções gerarSugestoesLocal, drawChart, calcularFluencia e logout como estão)
 </script>
 </body>
 </html>
