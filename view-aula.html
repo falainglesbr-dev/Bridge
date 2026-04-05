@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge - Aula</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --red: #c20000;
+            --bg: #000000;
+            --card-bg: #121212;
+            --border: #333;
+            --text-main: #ffffff;
+            --text-dim: #b3b3b3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg); color: var(--text-main); }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .btn-back { text-decoration: none; color: var(--text-dim); font-size: 24px; }
+
+        h2 { font-size: 1.4rem; font-weight: 600; }
+        h2 span { color: var(--red); }
+
+        /* Card da Aula */
+        .aula-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
+        
+        .meta-info { color: var(--text-dim); font-size: 13px; margin-bottom: 15px; display: block; }
+        
+        .descricao { font-size: 15px; line-height: 1.6; color: #ddd; margin-bottom: 25px; }
+
+        /* Seção de Homework */
+        #homework-section { 
+            background: rgba(194, 0, 0, 0.05); 
+            border-left: 4px solid var(--red); 
+            padding: 15px; 
+            margin-bottom: 25px; 
+            display: none; 
+            border-radius: 4px;
+        }
+        #homework-section b { color: var(--red); display: block; margin-bottom: 5px; font-size: 12px; }
+
+        /* Grade de Botões */
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        
+        .btn-action { 
+            display: none; /* Escondido por padrão, via JS mostramos se houver link */
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+        
+        .btn-video { background: var(--red); color: white; border: none; }
+        .btn-video:hover { background: #a00000; transform: translateY(-3px); }
+        
+        .btn-secondary { background: transparent; color: white; }
+        .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--red); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 50px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body onload="carregarDetalhesAula()">
+
+<div class="container">
+    <header>
+        <a href="aulas.html" class="btn-back">←</a>
+        <h2 id="titulo-aula">Carregando...</h2>
+    </header>
+
+    <div id="loader" class="loader"></div>
+
+    <div id="main-content" style="display:none;">
+        <div class="aula-content">
+            <small class="meta-info" id="data-aula"></small>
+            
+            <p class="descricao" id="desc-aula"></p>
+
+            <div id="homework-section">
+                <b>HOMEWORK / TASK:</b>
+                <p id="txt-homework" style="font-size: 14px;"></p>
+            </div>
+
+            <div class="action-grid">
+                <a href="#" id="link-video" target="_blank" class="btn-action btn-video">ASSISTIR AULA</a>
+                <a href="#" id="link-material" target="_blank" class="btn-action btn-secondary">MATERIAL PDF</a>
+                <a href="#" id="link-anotacoes" target="_blank" class="btn-action btn-secondary">ANOTAÇÕES</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+    const token = sessionStorage.getItem('bridge_token');
+
+    async function carregarDetalhesAula() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const aulaId = urlParams.get('id');
+
+        if (!token || !aulaId) { window.location.href = "index.html"; return; }
+
+        try {
+            const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+            const data = await response.json();
+
+            if (data.success) {
+                // Filtra a aula específica dentro do banco de dados retornado
+                const aula = data.db.aulas.find(a => a.aula === decodeURIComponent(aulaId));
+                
+                if (aula) {
+                    document.getElementById('titulo-aula').innerHTML = `Aula: <span>${aula.aula}</span>`;
+                    document.getElementById('data-aula').innerText = aula.data || "DATA NÃO INFORMADA";
+                    document.getElementById('desc-aula').innerText = aula.descricao || "Sem descrição disponível para esta aula.";
+
+                    // Lógica de Homework
+                    if (aula.homework && aula.homework.trim() !== "" && !aula.homework.includes('http')) {
+                        document.getElementById('homework-section').style.display = 'block';
+                        document.getElementById('txt-homework').innerText = aula.homework;
+                    }
+
+                    // Configuração Dinâmica de Botões
+                    configurarBotao('link-video', aula.assistir);
+                    configurarBotao('link-material', aula.material);
+                    configurarBotao('link-anotacoes', aula.anotacoes_aluno);
+
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error("Erro ao carregar aula:", error);
+            alert("Erro ao carregar os dados da aula.");
+        }
+    }
+
+    function configurarBotao(id, url) {
+        const btn = document.getElementById(id);
+        if (url && url.toString().startsWith('http')) {
+            btn.href = url;
+            btn.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
