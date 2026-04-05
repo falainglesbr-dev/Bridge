@@ -155,13 +155,14 @@
                 
                 const data = await response.json();
 
-                if (data.success) {
-                    // Salva sessão no navegador (limpa ao fechar aba)
-                    sessionStorage.setItem('bridge_token', data.token);
-                    sessionStorage.setItem('bridge_nome', data.nome);
-                    
-                    // Redireciona para Dashboard
-                    window.location.href = "dashboard.html";
+              if (data.success) {
+    // Salva o token, o nome e a SENHA (para autorizar o getDados no Dashboard)
+    sessionStorage.setItem('bridge_token', data.token);
+    sessionStorage.setItem('bridge_nome', data.nome);
+    sessionStorage.setItem('bridge_key', senhaInput); // Salvamos a senha para uso na sessão
+    
+    // Redireciona para Dashboard
+    window.location.href = "dashboard.html";
                 } else {
                     mostrarErro(data.message || "Token ou senha inválidos.");
                     resetarInterface();
