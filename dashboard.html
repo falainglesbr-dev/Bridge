@@ -155,94 +155,89 @@
   </div>
 
   <div class="footer-actions">
-    <a href="<?= scriptUrl ?>?p=lista_aulas&token=<?= tokenAtual ?>" class="btn btn-red">Ver todas as aulas</a>
+    <a href="aulas.html" class="btn btn-red">Ver todas as aulas</a>
     <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca Digital</a>
   </div>
 </div>
 
 <script>
-  function inicializar() {
-    const token = "<?= tokenAtual ?>";
-    const senha = sessionStorage.getItem('bridge_key');
+  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  const token = sessionStorage.getItem('bridge_token');
 
-    if (!token || !senha) {
-      logout();
-      return;
-    }
+  if (!token) { window.location.href = "index.html"; }
 
-    // Chama a função buscarDadosCompletos que está no seu Código.gs
-    google.script.run.withSuccessHandler(res => {
-      if (res.success && res.db && res.db.alunos) {
-        const a = res.db.alunos[0];
-        
-        document.getElementById('nome-aluno').innerText = a.nome || "Estudante";
-        document.getElementById('b-nivel').innerText = a.ultimo_nivel || "--";
-        document.getElementById('b-perfil').innerText = a.perfil_ap || "--";
-        document.getElementById('b-status').innerText = a.status_matricula || "--";
+  async function inicializar() {
+    try {
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const a = data.db.alunos[0];
+        document.getElementById('nome-aluno').innerText = a.nome;
+        document.getElementById('b-nivel').innerText = a.ultimo_nivel;
+        document.getElementById('b-perfil').innerText = a.perfil_ap;
+        document.getElementById('b-status').innerText = a.status_matricula;
         document.getElementById('b-reagendar').innerText = a.reagendar || 0;
         document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
-        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback.';
+        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
 
-        // Carrega o gráfico e as sugestões
+        gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
+
         google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(() => {
-           drawChart(a.ultimo_nivel);
-           gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
-        });
+        google.charts.setOnLoadCallback(drawChart);
 
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('main-container').classList.add('fade-in');
-      } else {
-        logout();
       }
-    }).buscarDadosCompletos(token, senha);
+    } catch (e) { console.error(e); logout(); }
   }
 
   function gerarSugestoesLocal(perfil, nivel) {
-    const desc = document.getElementById('plano-desc');
-    const lista = document.getElementById('plano-lista');
-    
-    desc.innerText = "Foco em: " + (perfil || "General English");
-    lista.innerHTML = `
-      <li>Praticar conversação 15min/dia</li>
-      <li>Revisar temas da última aula: <b>${document.getElementById('aula-tema').innerText}</b></li>
-      <li>Explorar a Biblioteca Digital Bridge</li>
-    `;
-    document.getElementById('plano-nivel').innerText = "Recomendação baseada no seu nível: " + nivel;
+    const p = perfil ? perfil.toLowerCase() : "";
+    let sugestoes = [];
+    let titulo = "Foco em imersão e input compreensível";
+
+    if (p.includes("visual")) {
+      sugestoes = ["Utilizar Flashcards com imagens (Anki/Quizlet)", "Assistir vídeos com legendas em Inglês", "Mapas mentais para gramática"];
+    } else if (p.includes("auditivo")) {
+      sugestoes = ["Prática de Shadowing (repetir após o áudio)", "Escuta ativa de Podcasts (10min/dia)", "Gravar sua própria voz e comparar"];
+    } else {
+      sugestoes = ["Escrever exemplos reais do seu dia a dia", "Digitar textos ouvindo o áudio simultaneamente", "Interagir com ferramentas de IA via voz"];
+    }
+
+    document.getElementById('plano-desc').innerText = titulo;
+    document.getElementById('plano-lista').innerHTML = sugestoes.map(s => `<li>${s}</li>`).join('');
+    document.getElementById('plano-nivel').innerText = `Sugestão adaptada para o nível ${nivel}`;
   }
 
-  function drawChart(nivel) {
-    var data = google.visualization.arrayToDataTable([
-      ['Mês', 'Sua Evolução'],
-      ['Mês 1',  1],
-      ['Mês 2',  1.5],
-      ['Mês 3',  2],
-      ['Atual',  2.5]
-    ]);
-
-    var options = {
-      backgroundColor: 'transparent',
-      colors: ['#c20000'],
-      hAxis: { textStyle: {color: '#666'} },
-      vAxis: { textStyle: {color: '#666'}, gridlines: {color: '#222'} },
-      legend: 'none',
-      curveType: 'function'
-    };
-
-    var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-    chart.draw(data, options);
+  function drawChart() {
+    const data = google.visualization.arrayToDataTable([['Meses', 'Nível'], [0, 0], [4, 1], [9, 2], [18, 3], [30, 4]]);
+    const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+    chart.draw(data, { 
+      curveType: 'function', colors: ['#c20000'], legend: 'none', backgroundColor: 'transparent',
+      hAxis: { textStyle: { color: '#b3b3b3' }, gridlines: { color: '#333' } },
+      vAxis: { textStyle: { color: '#b3b3b3' }, ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] },
+      chartArea: { width: '85%', height: '80%' }
+    });
   }
 
   function calcularFluencia() {
-    const h = document.getElementById('c-horas').value;
-    const res = document.getElementById('calc-result');
-    res.style.display = 'block';
-    res.innerText = `Com ${h}h diária(s), sua estimativa de salto de nível é de aproximadamente ${Math.round(200/(h*30))} meses.`;
+    const nivel = parseInt(document.getElementById('c-nivel').value);
+    const horas = parseFloat(document.getElementById('c-horas').value);
+    let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
+    const final = Math.ceil(meses / (horas || 1));
+    document.getElementById('calc-ui').style.display = 'none';
+    const resDiv = document.getElementById('calc-result');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = `Estimativa: ${final} meses para fluência plena.<br><button class="btn btn-outline" style="margin-top:10px; padding: 5px 15px; font-size: 11px" onclick="resetCalc()">Recalcular</button>`;
   }
 
-  function logout() {
-    window.top.location.href = "<?= scriptUrl ?>?p=login";
+  function resetCalc() {
+    document.getElementById('calc-ui').style.display = 'block';
+    document.getElementById('calc-result').style.display = 'none';
   }
+
+  function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
 </script>
 </body>
 </html>
