@@ -25,7 +25,7 @@
       overflow-x: hidden;
     }
 
-    /* Tela de Carregamento (Igual ao Login) */
+    /* Tela de Carregamento */
     #loading-screen {
       position: fixed;
       top: 0; left: 0;
@@ -61,6 +61,7 @@
       margin-bottom: 30px; 
     }
 
+    /* Badges com Hover Restaurado */
     .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .badge { 
       background: var(--card-bg); 
@@ -69,6 +70,11 @@
       text-align: center; 
       border: 1px solid #333;
       border-bottom: 4px solid var(--red); 
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .badge:hover { 
+      transform: translateY(-5px); 
+      box-shadow: 0 10px 20px rgba(194, 0, 0, 0.1);
     }
     .badge b { font-size: 1.2rem; color: var(--red); display: block; margin-top: 5px; }
     .badge small { color: var(--text-dim); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
@@ -175,7 +181,6 @@
         document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
         document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
 
-        // Lógica Local do Plano de Estudos (Neurolinguística)
         gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
 
         google.charts.load('current', {'packages':['corechart']});
@@ -188,7 +193,7 @@
   }
 
   function gerarSugestoesLocal(perfil, nivel) {
-    const p = perfil.toLowerCase();
+    const p = perfil ? perfil.toLowerCase() : "";
     let sugestoes = [];
     let titulo = "Foco em imersão e input compreensível";
 
@@ -220,7 +225,7 @@
     const nivel = parseInt(document.getElementById('c-nivel').value);
     const horas = parseFloat(document.getElementById('c-horas').value);
     let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
-    const final = Math.ceil(meses / horas);
+    const final = Math.ceil(meses / (horas || 1));
     document.getElementById('calc-ui').style.display = 'none';
     const resDiv = document.getElementById('calc-result');
     resDiv.style.display = 'block';
