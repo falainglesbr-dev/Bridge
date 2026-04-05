@@ -155,34 +155,26 @@
   </div>
 
   <div class="footer-actions">
-    <a href="aulas.html" class="btn btn-red">Ver todas as aulas</a>
+    <a href="<?= scriptUrl ?>?p=lista_aulas&token=<?= tokenAtual ?>" class="btn btn-red">Ver todas as aulas</a>
     <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca Digital</a>
   </div>
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
-
-  async function inicializar() {
-    // 1. Puxa os dados da sessão dentro da função
-    const token = sessionStorage.getItem('bridge_token');
+  function inicializar() {
+    const token = "<?= tokenAtual ?>";
     const senha = sessionStorage.getItem('bridge_key');
 
-    // 2. Se não existirem, aí sim redireciona
     if (!token || !senha) {
-      window.location.href = "index.html";
+      logout();
       return;
     }
 
-    try {
-      // 3. Chamada para o Google Apps Script
-      const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
-      const data = await response.json();
-
-      if (data.success) {
-        const a = data.db.alunos[0];
+    // Chama a função buscarDadosCompletos que está no seu Código.gs
+    google.script.run.withSuccessHandler(res => {
+      if (res.success && res.db && res.db.alunos) {
+        const a = res.db.alunos[0];
         
-        // Seus nomes originais preservados
         document.getElementById('nome-aluno').innerText = a.nome || "Estudante";
         document.getElementById('b-nivel').innerText = a.ultimo_nivel || "--";
         document.getElementById('b-perfil').innerText = a.perfil_ap || "--";
@@ -191,32 +183,66 @@
         document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
         document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback.';
 
-        gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
-
+        // Carrega o gráfico e as sugestões
         google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawChart);
+        google.charts.setOnLoadCallback(() => {
+           drawChart(a.ultimo_nivel);
+           gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
+        });
 
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('main-container').classList.add('fade-in');
       } else {
-        // Se o servidor disser que a senha está errada
-        console.error("Erro no servidor:", data.message);
         logout();
       }
-    } catch (e) { 
-      console.error("Erro crítico na Dashboard:", e);
-      // Em vez de deslogar no erro de conexão, apenas avisa o usuário
-      document.querySelector('#loading-screen p').innerText = "Erro de conexão. Verifique sua internet.";
-    }
+    }).buscarDadosCompletos(token, senha);
   }
-  // Mantenha suas funções de sugestões e gráficos acima...
 
-function logout() {
-  window.top.location.href = "<?= scriptUrl ?>?p=login";
-}
-</script>
+  function gerarSugestoesLocal(perfil, nivel) {
+    const desc = document.getElementById('plano-desc');
+    const lista = document.getElementById('plano-lista');
+    
+    desc.innerText = "Foco em: " + (perfil || "General English");
+    lista.innerHTML = `
+      <li>Praticar conversação 15min/dia</li>
+      <li>Revisar temas da última aula: <b>${document.getElementById('aula-tema').innerText}</b></li>
+      <li>Explorar a Biblioteca Digital Bridge</li>
+    `;
+    document.getElementById('plano-nivel').innerText = "Recomendação baseada no seu nível: " + nivel;
+  }
 
-  // ... (mantenha suas funções gerarSugestoesLocal, drawChart, calcularFluencia e logout como estão)
+  function drawChart(nivel) {
+    var data = google.visualization.arrayToDataTable([
+      ['Mês', 'Sua Evolução'],
+      ['Mês 1',  1],
+      ['Mês 2',  1.5],
+      ['Mês 3',  2],
+      ['Atual',  2.5]
+    ]);
+
+    var options = {
+      backgroundColor: 'transparent',
+      colors: ['#c20000'],
+      hAxis: { textStyle: {color: '#666'} },
+      vAxis: { textStyle: {color: '#666'}, gridlines: {color: '#222'} },
+      legend: 'none',
+      curveType: 'function'
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+    chart.draw(data, options);
+  }
+
+  function calcularFluencia() {
+    const h = document.getElementById('c-horas').value;
+    const res = document.getElementById('calc-result');
+    res.style.display = 'block';
+    res.innerText = `Com ${h}h diária(s), sua estimativa de salto de nível é de aproximadamente ${Math.round(200/(h*30))} meses.`;
+  }
+
+  function logout() {
+    window.top.location.href = "<?= scriptUrl ?>?p=login";
+  }
 </script>
 </body>
 </html>
