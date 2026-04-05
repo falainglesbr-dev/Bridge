@@ -162,52 +162,64 @@
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  
+  // Recupera token E senha da sessão
   const token = sessionStorage.getItem('bridge_token');
+  const senha = sessionStorage.getItem('bridge_key'); 
 
-  if (!token) { window.location.href = "index.html"; }
+  if (!token || !senha) { window.location.href = "index.html"; }
 
   async function inicializar() {
     try {
-      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      // AJUSTE: Adicionado o parâmetro &senha para autorizar a busca dos dados
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
       const data = await response.json();
 
       if (data.success) {
         const a = data.db.alunos[0];
-        document.getElementById('nome-aluno').innerText = a.nome;
-        document.getElementById('b-nivel').innerText = a.ultimo_nivel;
-        document.getElementById('b-perfil').innerText = a.perfil_ap;
-        document.getElementById('b-status').innerText = a.status_matricula;
+        
+        // MAPEAMENTO: Ajustado para os nomes padrão de colunas (conforme o Backend enviado anteriormente)
+        document.getElementById('nome-aluno').innerText = a.nome || 'Estudante';
+        document.getElementById('b-nivel').innerText = a.nivel || '--';
+        document.getElementById('b-perfil').innerText = a.perfil || '--';
+        document.getElementById('b-status').innerText = a.status || '--';
         document.getElementById('b-reagendar').innerText = a.reagendar || 0;
-        document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
+        document.getElementById('aula-tema').innerText = a.tema || 'Nenhuma registrada';
         document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
 
-        gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
+        // INTEGRAÇÃO: Usa as sugestões automáticas que vêm do Google Apps Script
+        if (data.sugestoes) {
+          exibirSugestoesBackend(data.sugestoes);
+        } else {
+          gerarSugestoesLocal(a.perfil, a.nivel);
+        }
 
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(drawChart);
 
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('main-container').classList.add('fade-in');
+      } else {
+        logout(); // Se a senha/token falharem no backend, desloga
       }
-    } catch (e) { console.error(e); logout(); }
+    } catch (e) { 
+      console.error(e); 
+      document.querySelector('#loading-screen p').innerText = "Erro de conexão. Tente atualizar.";
+    }
+  }
+
+  function exibirSugestoesBackend(sugestoes) {
+    document.getElementById('plano-desc').innerText = sugestoes.plano_recomendado;
+    document.getElementById('plano-lista').innerHTML = sugestoes.perfil_sugestoes.map(s => `<li>${s}</li>`).join('');
+    document.getElementById('plano-nivel').innerText = sugestoes.nivel_sugestao;
   }
 
   function gerarSugestoesLocal(perfil, nivel) {
     const p = perfil ? perfil.toLowerCase() : "";
-    let sugestoes = [];
-    let titulo = "Foco em imersão e input compreensível";
-
-    if (p.includes("visual")) {
-      sugestoes = ["Utilizar Flashcards com imagens (Anki/Quizlet)", "Assistir vídeos com legendas em Inglês", "Mapas mentais para gramática"];
-    } else if (p.includes("auditivo")) {
-      sugestoes = ["Prática de Shadowing (repetir após o áudio)", "Escuta ativa de Podcasts (10min/dia)", "Gravar sua própria voz e comparar"];
-    } else {
-      sugestoes = ["Escrever exemplos reais do seu dia a dia", "Digitar textos ouvindo o áudio simultaneamente", "Interagir com ferramentas de IA via voz"];
-    }
-
-    document.getElementById('plano-desc').innerText = titulo;
+    let sugestoes = ["Revisar conteúdos da última aula", "Praticar listening 10min/dia"];
+    document.getElementById('plano-desc').innerText = "Foco em imersão";
     document.getElementById('plano-lista').innerHTML = sugestoes.map(s => `<li>${s}</li>`).join('');
-    document.getElementById('plano-nivel').innerText = `Sugestão adaptada para o nível ${nivel}`;
+    document.getElementById('plano-nivel').innerText = `Sugestão para nível ${nivel}`;
   }
 
   function drawChart() {
