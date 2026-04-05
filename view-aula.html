@@ -27,7 +27,6 @@
         h2 { font-size: 1.4rem; font-weight: 600; }
         h2 span { color: var(--red); }
 
-        /* Layout Flexbox 70/30 */
         .aula-layout { 
             display: flex; 
             gap: 25px; 
@@ -35,7 +34,7 @@
         }
 
         .main-info { width: 70%; }
-        .side-actions { width: 30%; }
+        .side-actions { width: 30%; display: flex; flex-direction: column; gap: 12px; }
 
         .aula-content { 
             background: var(--card-bg); 
@@ -46,10 +45,8 @@
         }
         
         .meta-info { color: var(--text-dim); font-size: 13px; margin-bottom: 15px; display: block; }
-        
         .descricao { font-size: 15px; line-height: 1.6; color: #ddd; margin-bottom: 25px; white-space: pre-wrap; }
 
-        /* Seção de Texto (Anotações/Materiais) */
         .text-block {
             margin-top: 20px;
             padding-top: 20px;
@@ -68,7 +65,6 @@
             line-height: 1.5;
         }
 
-        /* Homework */
         #homework-section { 
             background: rgba(194, 0, 0, 0.05); 
             border-left: 4px solid var(--red); 
@@ -79,12 +75,8 @@
         }
         #homework-section b { color: var(--red); display: block; margin-bottom: 5px; font-size: 12px; }
 
-        /* Botão Assistir Aula (Lado Direito) */
-        .btn-video { 
+        .btn-action { 
             display: none;
-            background: var(--red); 
-            color: white; 
-            border: none;
             text-align: center;
             padding: 18px;
             border-radius: 12px;
@@ -94,16 +86,20 @@
             transition: all 0.3s;
             width: 100%;
         }
+        
+        .btn-video { background: var(--red); color: white; border: none; }
         .btn-video:hover { background: #a00000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(194, 0, 0, 0.3); }
+
+        .btn-more { background: transparent; color: white; border: 1px solid var(--border); }
+        .btn-more:hover { border-color: var(--red); color: var(--red); transform: translateY(-3px); }
 
         .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--red); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 50px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Mobile Responsividade */
         @media (max-width: 768px) {
             .aula-layout { flex-direction: column; }
             .main-info, .side-actions { width: 100%; }
-            .side-actions { order: -1; } /* Botão sobe no mobile */
+            .side-actions { order: -1; }
         }
     </style>
 </head>
@@ -120,19 +116,16 @@
     <div id="main-content" style="display:none;">
         <div class="aula-layout">
             
-            <!-- Coluna Esquerda: 70% -->
             <div class="main-info">
                 <div class="aula-content">
                     <small class="meta-info" id="data-aula"></small>
                     <p class="descricao" id="desc-aula"></p>
 
-                    <!-- Bloco de Material -->
                     <div id="material-block" class="text-block" style="display:none;">
                         <h4>Material de Apoio</h4>
                         <p id="txt-material"></p>
                     </div>
 
-                    <!-- Bloco de Anotações -->
                     <div id="anotacoes-block" class="text-block" style="display:none;">
                         <h4>Minhas Anotações</h4>
                         <p id="txt-anotacoes"></p>
@@ -145,9 +138,9 @@
                 </div>
             </div>
 
-            <!-- Coluna Direita: 30% -->
             <div class="side-actions">
-                <a href="#" id="link-video" target="_blank" class="btn-video">ASSISTIR AULA</a>
+                <a href="#" id="link-video" target="_blank" class="btn-action btn-video">ASSISTIR AULA</a>
+                <a href="#" id="link-mais" target="_blank" class="btn-action btn-more">ESTUDE MAIS</a>
             </div>
 
         </div>
@@ -176,29 +169,33 @@
                     document.getElementById('data-aula').innerText = aula.data || "DATA NÃO INFORMADA";
                     document.getElementById('desc-aula').innerText = aula.descricao || "Sem descrição disponível.";
 
-                    // Exibição do Material (se não for link)
                     if (aula.material && aula.material.trim() !== "") {
                         document.getElementById('material-block').style.display = 'block';
                         document.getElementById('txt-material').innerText = aula.material;
                     }
 
-                    // Exibição das Anotações (se não for link)
                     if (aula.anotacoes_aluno && aula.anotacoes_aluno.trim() !== "") {
                         document.getElementById('anotacoes-block').style.display = 'block';
                         document.getElementById('txt-anotacoes').innerText = aula.anotacoes_aluno;
                     }
 
-                    // Homework
                     if (aula.homework && aula.homework.trim() !== "" && !aula.homework.includes('http')) {
                         document.getElementById('homework-section').style.display = 'block';
                         document.getElementById('txt-homework').innerText = aula.homework;
                     }
 
-                    // Botão de Vídeo (Somente se houver link)
+                    // Botão de Vídeo
                     const btnVideo = document.getElementById('link-video');
                     if (aula.assistir && aula.assistir.toString().startsWith('http')) {
                         btnVideo.href = aula.assistir;
                         btnVideo.style.display = 'block';
+                    }
+
+                    // Botão Estude Mais (coluna 'mais')
+                    const btnMais = document.getElementById('link-mais');
+                    if (aula.mais && aula.mais.toString().startsWith('http')) {
+                        btnMais.href = aula.mais;
+                        btnMais.style.display = 'block';
                     }
 
                     document.getElementById('loader').style.display = 'none';
