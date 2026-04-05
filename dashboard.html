@@ -1,141 +1,135 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bridge - Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <style>
-        :root { 
-            --red: #c20000;
-            --white: #ffffff; 
-            --light: #f4f4f4; 
-            --border-color: #eee;
-            --card-bg: #ffffff;
-            --text-main: #333333;
-            --text-sub: #666;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <style>
+    :root { 
+      --red: #c20000;
+      --bg: #000000;
+      --card-bg: rgba(20, 20, 20, 0.95);
+      --border: rgba(194, 0, 0, 0.3);
+      --text-main: #ffffff;
+      --text-dim: #b3b3b3;
+    }
 
-        body.dark-mode {
-            --white: #000000;
-            --light: #1a1a1a;
-            --border-color: #333;
-            --card-bg: #121212;
-            --text-main: #ffffff;
-            --text-sub: #b3b3b3;
-        }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            margin: 0; 
-            color: var(--text-main);
-            background-color: var(--white); 
-            opacity: 0; 
-            transition: opacity 0.8s ease-in-out, background-color 0.3s; 
-        }
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
 
-        .fade-in { opacity: 1; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    /* Tela de Carregamento (Igual ao Login) */
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
 
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
-        }
+    .loader {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top: 3px solid var(--red);
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        .header-right { display: flex; align-items: center; gap: 15px; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; display: none; }
+    .fade-in { display: block; animation: fadeIn 0.8s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .dark-toggle {
-            background: var(--light);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+    header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #333; 
+      padding-bottom: 20px; 
+      margin-bottom: 30px; 
+    }
 
-        .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        
-        .badge { 
-            background: var(--light);
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            border-bottom: 4px solid var(--red); 
-            transition: transform 0.3s ease;
-        }
-        .badge:hover { transform: translateY(-5px); }
-        .badge b { font-size: 1.3rem; color: var(--red); display: block; }
-        .badge small { color: var(--text-sub); text-transform: uppercase; font-size: 10px; }
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .badge { 
+      background: var(--card-bg); 
+      padding: 20px; 
+      border-radius: 16px; 
+      text-align: center; 
+      border: 1px solid #333;
+      border-bottom: 4px solid var(--red); 
+    }
+    .badge b { font-size: 1.2rem; color: var(--red); display: block; margin-top: 5px; }
+    .badge small { color: var(--text-dim); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
 
-        .card { 
-            background: var(--card-bg); 
-            border: 1px solid var(--border-color); 
-            border-radius: 16px;
-            padding: 25px; 
-            margin-bottom: 20px; 
-        }
-        .card h3 { margin-top: 0; color: var(--text-main); font-size: 1rem; border-left: 5px solid var(--red); padding-left: 15px; margin-bottom: 15px; }
-        
-        .calc-intro { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 20px; display: block; margin-top: -5px; }
+    .card { 
+      background: var(--card-bg); 
+      border: 1px solid #333; 
+      border-radius: 20px;
+      padding: 30px; 
+      margin-bottom: 20px; 
+    }
+    .card h3 { color: var(--text-main); font-size: 1.1rem; border-left: 5px solid var(--red); padding-left: 15px; margin-bottom: 20px; }
+    
+    .calc-intro { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; display: block; }
 
-        .btn { display: inline-block; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; cursor: pointer; border: none; text-align: center; }
-        .btn-red { background: var(--red); color: white; }
-        .btn-outline { border: 1px solid var(--border-color); color: var(--text-main); background: var(--card-bg); }
-        
-        .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
-        .footer-actions .btn:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .btn { display: inline-block; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: all 0.3s; cursor: pointer; border: none; text-align: center; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-red:hover { background: #a00000; transform: translateY(-3px); }
+    .btn-outline { border: 1px solid #333; color: var(--text-main); background: transparent; }
+    .btn-outline:hover { border-color: var(--red); color: var(--red); }
 
-        #calc-result { margin-top: 20px; padding: 15px; background: rgba(194, 0, 0, 0.1); border-radius: 10px; color: var(--red); font-weight: 600; display: none; }
-        
-        input, select { background: var(--light); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 5px; padding: 5px; }
+    .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
 
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--white); display: flex; justify-content: center; align-items: center; z-index: 999; color: var(--text-main); }
-    </style>
+    input, select { background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-right: 10px; }
+
+    #calc-result { margin-top: 20px; padding: 15px; background: rgba(194, 0, 0, 0.1); border-radius: 10px; color: var(--red); font-weight: 600; display: none; }
+    
+    #plano-lista li { margin-bottom: 8px; font-size: 14px; color: var(--text-dim); }
+  </style>
 </head>
-<body onload="checkDarkMode(); inicializar()">
+<body onload="inicializar()">
 
-<div id="loading-screen">Carregando portal...</div>
+<div id="loading-screen">
+  <div class="loader"></div>
+  <p style="color: #666; font-size: 13px;">Sincronizando dados...</p>
+</div>
 
-<div class="container">
+<div class="container" id="main-container">
   <header>
-    <div>
-      <h2 style="margin:0">Olá, <span id="nome-aluno">...</span></h2>
-    </div>
-    <div class="header-right">
-      <button onclick="toggleDarkMode()" class="dark-toggle" id="theme-btn">
-        <span id="theme-icon">🌙</span> <span id="theme-text">Dark</span>
-      </button>
-      <button onclick="logout()" class="btn" style="color:var(--text-sub); background: none; font-size: 14px;">Sair</button>
-    </div>
+    <h2>Olá, <span id="nome-aluno">Estudante</span></h2>
+    <button onclick="logout()" class="btn" style="color: var(--text-dim); background: none; font-size: 14px;">Sair</button>
   </header>
 
   <div class="badge-grid">
-    <div class="badge"><small>NÍVEL</small><b id="b-nivel">...</b></div>
-    <div class="badge"><small>PERFIL</small><b id="b-perfil">...</b></div>
-    <div class="badge"><small>MATRÍCULA</small><b id="b-status">...</b></div>
+    <div class="badge"><small>NÍVEL</small><b id="b-nivel">--</b></div>
+    <div class="badge"><small>PERFIL</small><b id="b-perfil">--</b></div>
+    <div class="badge"><small>STATUS</small><b id="b-status">--</b></div>
     <div class="badge"><small>REAGENDAR</small><b id="b-reagendar">0</b></div>
   </div>
 
   <div class="card">
     <h3>Professor(a): <span id="prof-nome">Diandra</span></h3>
-    <p><b>Última aula:</b> <span id="aula-tema">...</span></p>
-    <p><b>Observações:</b> <br><i id="aula-obs" style="color: var(--text-sub);">...</i></p>
+    <p style="margin-bottom: 10px;"><b>Última aula:</b> <span id="aula-tema" style="color: var(--text-dim);">...</span></p>
+    <p><b>Observações do docente:</b> <br><i id="aula-obs" style="color: var(--text-dim); font-size: 14px;">...</i></p>
   </div>
 
   <div class="card">
     <h3>📚 Plano de estudos personalizado</h3>
-    <p id="plano-desc" style="font-weight: 600; color: var(--red);"></p>
-    <ul id="plano-lista" style="padding-left: 20px; margin-top: 10px; color: var(--text-sub); font-size: 14px;"></ul>
-    <div id="plano-nivel" style="font-size: 12px; color: var(--text-sub); border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 10px;"></div>
+    <p id="plano-desc" style="font-weight: 600; color: var(--red); margin-bottom: 15px;"></p>
+    <ul id="plano-lista" style="padding-left: 20px;"></ul>
+    <div id="plano-nivel" style="font-size: 12px; color: var(--text-dim); border-top: 1px solid #333; margin-top: 20px; padding-top: 10px;"></div>
   </div>
 
   <div class="card">
@@ -143,106 +137,102 @@
     <div id="chart_div" style="width: 100%; height: 250px;"></div>
   </div>
 
-  <div class="card" id="area-calc">
+  <div class="card">
     <h3>📊 Calculadora de fluência</h3>
-    <span class="calc-intro">Descubra quanto tempo levará para atingir a fluência com base no seu ritmo atual.</span>
+    <span class="calc-intro">Estimativa baseada no nível atual e carga horária dedicada.</span>
     <div id="calc-ui">
-      Nível: <select id="c-nivel"><option value="1">A1</option><option value="2">A2</option><option value="3">B1</option></select>
-      h/dia: <input type="number" id="c-horas" value="1" style="width: 50px;">
-      <button class="btn btn-red" style="padding: 8px 20px; font-size: 12px;" onclick="calcularFluencia()">Calcular</button>
+      <select id="c-nivel"><option value="1">Iniciante (A1)</option><option value="2">Elementar (A2)</option><option value="3">Independente (B1)</option></select>
+      <input type="number" id="c-horas" value="1" style="width: 70px;" placeholder="h/dia">
+      <button class="btn btn-red" style="padding: 10px 20px; font-size: 13px;" onclick="calcularFluencia()">Calcular</button>
     </div>
     <div id="calc-result"></div>
   </div>
 
   <div class="footer-actions">
     <a href="aulas.html" class="btn btn-red">Ver todas as aulas</a>
-    <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca</a>
+    <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca Digital</a>
   </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
-    const token = sessionStorage.getItem('bridge_token');
+  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  const token = sessionStorage.getItem('bridge_token');
 
-    if (!token) { window.location.href = "index.html"; }
+  if (!token) { window.location.href = "index.html"; }
 
-    function toggleDarkMode() {
-        const isDark = document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', isDark);
-        updateThemeUI(isDark);
-        drawChart();
+  async function inicializar() {
+    try {
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const a = data.db.alunos[0];
+        document.getElementById('nome-aluno').innerText = a.nome;
+        document.getElementById('b-nivel').innerText = a.ultimo_nivel;
+        document.getElementById('b-perfil').innerText = a.perfil_ap;
+        document.getElementById('b-status').innerText = a.status_matricula;
+        document.getElementById('b-reagendar').innerText = a.reagendar || 0;
+        document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
+        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
+
+        // Lógica Local do Plano de Estudos (Neurolinguística)
+        gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
+
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('main-container').classList.add('fade-in');
+      }
+    } catch (e) { console.error(e); logout(); }
+  }
+
+  function gerarSugestoesLocal(perfil, nivel) {
+    const p = perfil.toLowerCase();
+    let sugestoes = [];
+    let titulo = "Foco em imersão e input compreensível";
+
+    if (p.includes("visual")) {
+      sugestoes = ["Utilizar Flashcards com imagens (Anki/Quizlet)", "Assistir vídeos com legendas em Inglês", "Mapas mentais para gramática"];
+    } else if (p.includes("auditivo")) {
+      sugestoes = ["Prática de Shadowing (repetir após o áudio)", "Escuta ativa de Podcasts (10min/dia)", "Gravar sua própria voz e comparar"];
+    } else {
+      sugestoes = ["Escrever exemplos reais do seu dia a dia", "Digitar textos ouvindo o áudio simultaneamente", "Interagir com ferramentas de IA via voz"];
     }
 
-    function checkDarkMode() {
-        const saved = localStorage.getItem('darkMode') === 'true';
-        if (saved) { document.body.classList.add('dark-mode'); updateThemeUI(true); }
-    }
+    document.getElementById('plano-desc').innerText = titulo;
+    document.getElementById('plano-lista').innerHTML = sugestoes.map(s => `<li>${s}</li>`).join('');
+    document.getElementById('plano-nivel').innerText = `Sugestão adaptada para o nível ${nivel}`;
+  }
 
-    function updateThemeUI(isDark) {
-        document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
-        document.getElementById('theme-text').innerText = isDark ? 'Light' : 'Dark';
-    }
+  function drawChart() {
+    const data = google.visualization.arrayToDataTable([['Meses', 'Nível'], [0, 0], [4, 1], [9, 2], [18, 3], [30, 4]]);
+    const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+    chart.draw(data, { 
+      curveType: 'function', colors: ['#c20000'], legend: 'none', backgroundColor: 'transparent',
+      hAxis: { textStyle: { color: '#b3b3b3' }, gridlines: { color: '#333' } },
+      vAxis: { textStyle: { color: '#b3b3b3' }, ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] },
+      chartArea: { width: '85%', height: '80%' }
+    });
+  }
 
-    async function inicializar() {
-        try {
-            const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
-            const data = await response.json();
+  function calcularFluencia() {
+    const nivel = parseInt(document.getElementById('c-nivel').value);
+    const horas = parseFloat(document.getElementById('c-horas').value);
+    let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
+    const final = Math.ceil(meses / horas);
+    document.getElementById('calc-ui').style.display = 'none';
+    const resDiv = document.getElementById('calc-result');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = `Estimativa: ${final} meses para fluência plena.<br><button class="btn btn-outline" style="margin-top:10px; padding: 5px 15px; font-size: 11px" onclick="resetCalc()">Recalcular</button>`;
+  }
 
-            if (data.success) {
-                const a = data.db.alunos[0];
-                document.getElementById('nome-aluno').innerText = a.nome;
-                document.getElementById('b-nivel').innerText = a.ultimo_nivel;
-                document.getElementById('b-perfil').innerText = a.perfil_ap;
-                document.getElementById('b-status').innerText = a.status_matricula;
-                document.getElementById('b-reagendar').innerText = a.reagendar || 0;
-                document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
-                document.getElementById('aula-obs').innerText = a.observacoes || 'Sem observações.';
+  function resetCalc() {
+    document.getElementById('calc-ui').style.display = 'block';
+    document.getElementById('calc-result').style.display = 'none';
+  }
 
-                // Plano de Estudos (Neurolinguística)
-                if (data.sugestoes) {
-                    document.getElementById('plano-desc').innerText = data.sugestoes.plano_recomendado;
-                    document.getElementById('plano-nivel').innerText = data.sugestoes.nivel_sugestao;
-                    document.getElementById('plano-lista').innerHTML = data.sugestoes.perfil_sugestoes.map(s => `<li>${s}</li>`).join('');
-                }
-
-                google.charts.load('current', {'packages':['corechart']});
-                google.charts.setOnLoadCallback(drawChart);
-
-                document.getElementById('loading-screen').style.display = 'none';
-                document.body.classList.add('fade-in');
-            }
-        } catch (e) { console.error(e); logout(); }
-    }
-
-    function drawChart() {
-        const isDark = document.body.classList.contains('dark-mode');
-        const data = google.visualization.arrayToDataTable([['Meses', 'Nível'], [0, 0], [4, 1], [9, 2], [18, 3], [30, 4]]);
-        const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-        chart.draw(data, { 
-            curveType: 'function', colors: ['#c20000'], legend: 'none', backgroundColor: 'transparent',
-            hAxis: { textStyle: { color: isDark ? '#b3b3b3' : '#666' }, gridlines: { color: isDark ? '#333' : '#eee' } },
-            vAxis: { textStyle: { color: isDark ? '#b3b3b3' : '#666' }, ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] },
-            chartArea: { width: '85%', height: '80%' }
-        });
-    }
-
-    function calcularFluencia() {
-        const nivel = parseInt(document.getElementById('c-nivel').value);
-        const horas = parseFloat(document.getElementById('c-horas').value);
-        let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
-        const final = Math.ceil(meses / horas);
-        document.getElementById('calc-ui').style.display = 'none';
-        const resDiv = document.getElementById('calc-result');
-        resDiv.style.display = 'block';
-        resDiv.innerHTML = `No seu ritmo, você chegará à fluência em aprox. ${final} meses.<br><button class="btn btn-outline" style="margin-top:10px; padding: 5px 15px; font-size: 11px" onclick="resetCalc()">Recalcular</button>`;
-    }
-
-    function resetCalc() {
-        document.getElementById('calc-ui').style.display = 'block';
-        document.getElementById('calc-result').style.display = 'none';
-    }
-
-    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+  function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
 </script>
 </body>
 </html>
