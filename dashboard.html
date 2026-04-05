@@ -209,6 +209,14 @@
       document.querySelector('#loading-screen p').innerText = "Erro de conexão. Verifique sua internet.";
     }
   }
+  // Mantenha suas funções de sugestões e gráficos acima...
+
+  function logout() { 
+    console.log("Fazendo logout...");
+    sessionStorage.clear(); 
+    window.location.href = "index.html"; 
+  }
+</script>
 
   // ... (mantenha suas funções gerarSugestoesLocal, drawChart, calcularFluencia e logout como estão)
 </script>
