@@ -18,55 +18,93 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--bg); color: var(--text-main); }
 
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 
         header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .btn-back { text-decoration: none; color: var(--text-dim); font-size: 24px; }
+        .btn-back { text-decoration: none; color: var(--text-dim); font-size: 24px; transition: color 0.3s; }
+        .btn-back:hover { color: var(--red); }
 
         h2 { font-size: 1.4rem; font-weight: 600; }
         h2 span { color: var(--red); }
 
-        /* Card da Aula */
-        .aula-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
+        /* Layout Flexbox 70/30 */
+        .aula-layout { 
+            display: flex; 
+            gap: 25px; 
+            align-items: flex-start;
+        }
+
+        .main-info { width: 70%; }
+        .side-actions { width: 30%; }
+
+        .aula-content { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 20px; 
+            padding: 25px; 
+            margin-bottom: 20px;
+        }
         
         .meta-info { color: var(--text-dim); font-size: 13px; margin-bottom: 15px; display: block; }
         
-        .descricao { font-size: 15px; line-height: 1.6; color: #ddd; margin-bottom: 25px; }
+        .descricao { font-size: 15px; line-height: 1.6; color: #ddd; margin-bottom: 25px; white-space: pre-wrap; }
 
-        /* Seção de Homework */
+        /* Seção de Texto (Anotações/Materiais) */
+        .text-block {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .text-block h4 {
+            color: var(--red);
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .text-block p {
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* Homework */
         #homework-section { 
             background: rgba(194, 0, 0, 0.05); 
             border-left: 4px solid var(--red); 
             padding: 15px; 
-            margin-bottom: 25px; 
+            margin-top: 25px;
             display: none; 
             border-radius: 4px;
         }
         #homework-section b { color: var(--red); display: block; margin-bottom: 5px; font-size: 12px; }
 
-        /* Grade de Botões */
-        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        
-        .btn-action { 
-            display: none; /* Escondido por padrão, via JS mostramos se houver link */
+        /* Botão Assistir Aula (Lado Direito) */
+        .btn-video { 
+            display: none;
+            background: var(--red); 
+            color: white; 
+            border: none;
             text-align: center;
-            padding: 15px;
+            padding: 18px;
             border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
             transition: all 0.3s;
-            border: 1px solid var(--border);
+            width: 100%;
         }
-        
-        .btn-video { background: var(--red); color: white; border: none; }
-        .btn-video:hover { background: #a00000; transform: translateY(-3px); }
-        
-        .btn-secondary { background: transparent; color: white; }
-        .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+        .btn-video:hover { background: #a00000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(194, 0, 0, 0.3); }
 
         .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--red); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 50px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile Responsividade */
+        @media (max-width: 768px) {
+            .aula-layout { flex-direction: column; }
+            .main-info, .side-actions { width: 100%; }
+            .side-actions { order: -1; } /* Botão sobe no mobile */
+        }
     </style>
 </head>
 <body onload="carregarDetalhesAula()">
@@ -80,21 +118,38 @@
     <div id="loader" class="loader"></div>
 
     <div id="main-content" style="display:none;">
-        <div class="aula-content">
-            <small class="meta-info" id="data-aula"></small>
+        <div class="aula-layout">
             
-            <p class="descricao" id="desc-aula"></p>
+            <!-- Coluna Esquerda: 70% -->
+            <div class="main-info">
+                <div class="aula-content">
+                    <small class="meta-info" id="data-aula"></small>
+                    <p class="descricao" id="desc-aula"></p>
 
-            <div id="homework-section">
-                <b>HOMEWORK / TASK:</b>
-                <p id="txt-homework" style="font-size: 14px;"></p>
+                    <!-- Bloco de Material -->
+                    <div id="material-block" class="text-block" style="display:none;">
+                        <h4>Material de Apoio</h4>
+                        <p id="txt-material"></p>
+                    </div>
+
+                    <!-- Bloco de Anotações -->
+                    <div id="anotacoes-block" class="text-block" style="display:none;">
+                        <h4>Minhas Anotações</h4>
+                        <p id="txt-anotacoes"></p>
+                    </div>
+
+                    <div id="homework-section">
+                        <b>HOMEWORK / TASK:</b>
+                        <p id="txt-homework" style="font-size: 14px;"></p>
+                    </div>
+                </div>
             </div>
 
-            <div class="action-grid">
-                <a href="#" id="link-video" target="_blank" class="btn-action btn-video">ASSISTIR AULA</a>
-                <a href="#" id="link-material" target="_blank" class="btn-action btn-secondary">MATERIAL PDF</a>
-                <a href="#" id="link-anotacoes" target="_blank" class="btn-action btn-secondary">ANOTAÇÕES</a>
+            <!-- Coluna Direita: 30% -->
+            <div class="side-actions">
+                <a href="#" id="link-video" target="_blank" class="btn-video">ASSISTIR AULA</a>
             </div>
+
         </div>
     </div>
 </div>
@@ -114,40 +169,44 @@
             const data = await response.json();
 
             if (data.success) {
-                // Filtra a aula específica dentro do banco de dados retornado
                 const aula = data.db.aulas.find(a => a.aula === decodeURIComponent(aulaId));
                 
                 if (aula) {
                     document.getElementById('titulo-aula').innerHTML = `Aula: <span>${aula.aula}</span>`;
                     document.getElementById('data-aula').innerText = aula.data || "DATA NÃO INFORMADA";
-                    document.getElementById('desc-aula').innerText = aula.descricao || "Sem descrição disponível para esta aula.";
+                    document.getElementById('desc-aula').innerText = aula.descricao || "Sem descrição disponível.";
 
-                    // Lógica de Homework
+                    // Exibição do Material (se não for link)
+                    if (aula.material && aula.material.trim() !== "") {
+                        document.getElementById('material-block').style.display = 'block';
+                        document.getElementById('txt-material').innerText = aula.material;
+                    }
+
+                    // Exibição das Anotações (se não for link)
+                    if (aula.anotacoes_aluno && aula.anotacoes_aluno.trim() !== "") {
+                        document.getElementById('anotacoes-block').style.display = 'block';
+                        document.getElementById('txt-anotacoes').innerText = aula.anotacoes_aluno;
+                    }
+
+                    // Homework
                     if (aula.homework && aula.homework.trim() !== "" && !aula.homework.includes('http')) {
                         document.getElementById('homework-section').style.display = 'block';
                         document.getElementById('txt-homework').innerText = aula.homework;
                     }
 
-                    // Configuração Dinâmica de Botões
-                    configurarBotao('link-video', aula.assistir);
-                    configurarBotao('link-material', aula.material);
-                    configurarBotao('link-anotacoes', aula.anotacoes_aluno);
+                    // Botão de Vídeo (Somente se houver link)
+                    const btnVideo = document.getElementById('link-video');
+                    if (aula.assistir && aula.assistir.toString().startsWith('http')) {
+                        btnVideo.href = aula.assistir;
+                        btnVideo.style.display = 'block';
+                    }
 
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('main-content').style.display = 'block';
                 }
             }
         } catch (error) {
-            console.error("Erro ao carregar aula:", error);
-            alert("Erro ao carregar os dados da aula.");
-        }
-    }
-
-    function configurarBotao(id, url) {
-        const btn = document.getElementById(id);
-        if (url && url.toString().startsWith('http')) {
-            btn.href = url;
-            btn.style.display = 'block';
+            console.error("Erro:", error);
         }
     }
 </script>
