@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge - Minhas Aulas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { 
+      --red: #c20000;
+      --bg: #000000;
+      --card-bg: rgba(20, 20, 20, 0.95);
+      --border: #333;
+      --text-main: #ffffff;
+      --text-dim: #b3b3b3;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      background-color: var(--bg);
+      color: var(--text-main);
+      opacity: 0; 
+      transition: opacity 0.5s; 
+    }
+
+    .fade-in { opacity: 1; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .btn-back {
+      text-decoration: none;
+      color: var(--text-dim);
+      font-size: 24px;
+      transition: color 0.3s;
+    }
+
+    .btn-back:hover { color: var(--red); }
+
+    h1 { font-size: 1.8rem; font-weight: 600; }
+    h1 span { color: var(--red); }
+
+    /* Grid de Cards */
+    #lista-aulas {
+      display: grid;
+      gap: 16px;
+    }
+
+    .aula-card { 
+      display: flex;
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 24px; 
+      background: var(--card-bg);
+      border: 1px solid var(--border); 
+      border-radius: 16px; 
+      text-decoration: none; 
+      color: inherit; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+
+    .aula-card:hover { 
+      border-color: var(--red); 
+      transform: translateX(8px);
+      box-shadow: 0 10px 20px rgba(194, 0, 0, 0.15);
+    }
+
+    .aula-info small {
+      color: var(--red);
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .aula-info b {
+      font-size: 1.1rem;
+      color: var(--text-main);
+      display: block;
+    }
+
+    .seta-red { 
+      color: var(--red);
+      font-size: 1.5rem;
+      font-weight: bold; 
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      margin-top: 50px;
+      font-style: italic;
+    }
+
+    /* Loader simples */
+    .loader {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top: 3px solid var(--red);
+      border-radius: 50%;
+      width: 30px; height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 50px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body onload="carregarAulas()">
+
+<div class="container">
+  <header>
+    <a href="dashboard.html" class="btn-back">←</a>
+    <h1>Minhas <span>Aulas</span></h1>
+  </header>
+
+  <div id="loader" class="loader"></div>
+  <div id="lista-aulas"></div>
+</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  const token = sessionStorage.getItem('bridge_token');
+
+  if (!token) { window.location.href = "index.html"; }
+
+  async function carregarAulas() {
+    document.body.classList.add('fade-in');
+    
+    try {
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      const data = await response.json();
+
+      const container = document.getElementById('lista-aulas');
+      document.getElementById('loader').style.display = 'none';
+      
+      if(data.success && data.db.aulas.length > 0) {
+        // Renderiza os cards (do mais recente para o mais antigo)
+        container.innerHTML = data.db.aulas.slice().reverse().map(aula => `
+          <a href="view-aula.html?id=${encodeURIComponent(aula.aula)}" class="aula-card">
+            <div class="aula-info">
+              <small>${aula.data || 'SEM DATA'}</small>
+              <b>${aula.aula}</b>
+            </div>
+            <div class="seta-red">→</div>
+          </a>
+        `).join('');
+      } else {
+        container.innerHTML = '<p class="empty-state">Nenhuma aula registrada ainda.</p>';
+      }
+    } catch (error) {
+      console.error("Erro:", error);
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('lista-aulas').innerHTML = '<p class="empty-state">Erro ao carregar histórico.</p>';
+    }
+  }
+</script>
+</body>
+</html>
