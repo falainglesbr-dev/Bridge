@@ -127,16 +127,18 @@
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbwoMQolodkRhFOUhC2HQRBqRedZioxXT33dOWLSLoNcYJEJ40C2zszh54Lp8xsxcxtmXA/exec";
   const token = sessionStorage.getItem('bridge_token');
+  const senha = sessionStorage.getItem('bridge_senha');
 
-  if (!token) { window.location.href = "index.html"; }
+  if (!token || !senha) { window.location.href = "index.html"; }
 
   async function carregarAulas() {
     document.body.classList.add('fade-in');
     
     try {
-      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      // Adicionado o parâmetro &senha=${senha} para autorizar a busca dos dados
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
       const data = await response.json();
 
       const container = document.getElementById('lista-aulas');
@@ -153,8 +155,11 @@
             <div class="seta-red">→</div>
           </a>
         `).join('');
-      } else {
+      } else if (data.success) {
         container.innerHTML = '<p class="empty-state">Nenhuma aula registrada ainda.</p>';
+      } else {
+        // Caso a senha seja inválida ou ocorra erro de permissão na API
+        window.location.href = "index.html";
       }
     } catch (error) {
       console.error("Erro:", error);
