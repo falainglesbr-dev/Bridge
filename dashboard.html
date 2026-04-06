@@ -1,243 +1,43 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <style>
-    :root { 
-      --red: #c20000;
-      --bg: #000000;
-      --card-bg: rgba(20, 20, 20, 0.95);
-      --border: rgba(194, 0, 0, 0.3);
-      --text-main: #ffffff;
-      --text-dim: #b3b3b3;
+// Configuração da sua nova API
+const API_URL = "https://script.google.com/macros/s/AKfycbwoMQolodkRhFOUhC2HQRBqRedZioxXT33dOWLSLoNcYJEJ40C2zszh54Lp8xsxcxtmXA/exec";
+
+async function carregarDadosDashboard() {
+    const token = localStorage.getItem('bridge_token');
+    const senha = localStorage.getItem('bridge_senha');
+
+    // Se não houver login salvo, volta para a tela inicial
+    if (!token || !senha) {
+        window.location.href = 'index.html';
+        return;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body { 
-      font-family: 'Poppins', sans-serif; 
-      background-color: var(--bg);
-      color: var(--text-main);
-      overflow-x: hidden;
-    }
-
-    /* Tela de Carregamento */
-    #loading-screen {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    .loader {
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top: 3px solid var(--red);
-      border-radius: 50%;
-      width: 40px; height: 40px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; display: none; }
-    .fade-in { display: block; animation: fadeIn 0.8s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center;
-      border-bottom: 1px solid #333; 
-      padding-bottom: 20px; 
-      margin-bottom: 30px; 
-    }
-
-    /* Badges com Hover Restaurado */
-    .badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .badge { 
-      background: var(--card-bg); 
-      padding: 20px; 
-      border-radius: 16px; 
-      text-align: center; 
-      border: 1px solid #333;
-      border-bottom: 4px solid var(--red); 
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .badge:hover { 
-      transform: translateY(-5px); 
-      box-shadow: 0 10px 20px rgba(194, 0, 0, 0.1);
-    }
-    .badge b { font-size: 1.2rem; color: var(--red); display: block; margin-top: 5px; }
-    .badge small { color: var(--text-dim); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
-
-    .card { 
-      background: var(--card-bg); 
-      border: 1px solid #333; 
-      border-radius: 20px;
-      padding: 30px; 
-      margin-bottom: 20px; 
-    }
-    .card h3 { color: var(--text-main); font-size: 1.1rem; border-left: 5px solid var(--red); padding-left: 15px; margin-bottom: 20px; }
-    
-    .calc-intro { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; display: block; }
-
-    .btn { display: inline-block; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: all 0.3s; cursor: pointer; border: none; text-align: center; }
-    .btn-red { background: var(--red); color: white; }
-    .btn-red:hover { background: #a00000; transform: translateY(-3px); }
-    .btn-outline { border: 1px solid #333; color: var(--text-main); background: transparent; }
-    .btn-outline:hover { border-color: var(--red); color: var(--red); }
-
-    .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-
-    input, select { background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-right: 10px; }
-
-    #calc-result { margin-top: 20px; padding: 15px; background: rgba(194, 0, 0, 0.1); border-radius: 10px; color: var(--red); font-weight: 600; display: none; }
-    
-    #plano-lista li { margin-bottom: 8px; font-size: 14px; color: var(--text-dim); }
-  </style>
-</head>
-<body onload="inicializar()">
-
-<div id="loading-screen">
-  <div class="loader"></div>
-  <p style="color: #666; font-size: 13px;">Sincronizando dados...</p>
-</div>
-
-<div class="container" id="main-container">
-  <header>
-    <h2>Olá, <span id="nome-aluno">Estudante</span></h2>
-    <button onclick="logout()" class="btn" style="color: var(--text-dim); background: none; font-size: 14px;">Sair</button>
-  </header>
-
-  <div class="badge-grid">
-    <div class="badge"><small>NÍVEL</small><b id="b-nivel">--</b></div>
-    <div class="badge"><small>PERFIL</small><b id="b-perfil">--</b></div>
-    <div class="badge"><small>STATUS</small><b id="b-status">--</b></div>
-    <div class="badge"><small>REAGENDAR</small><b id="b-reagendar">0</b></div>
-  </div>
-
-  <div class="card">
-    <h3>Professor(a): <span id="prof-nome">Diandra</span></h3>
-    <p style="margin-bottom: 10px;"><b>Última aula:</b> <span id="aula-tema" style="color: var(--text-dim);">...</span></p>
-    <p><b>Observações do docente:</b> <br><i id="aula-obs" style="color: var(--text-dim); font-size: 14px;">...</i></p>
-  </div>
-
-  <div class="card">
-    <h3>📚 Plano de estudos personalizado</h3>
-    <p id="plano-desc" style="font-weight: 600; color: var(--red); margin-bottom: 15px;"></p>
-    <ul id="plano-lista" style="padding-left: 20px;"></ul>
-    <div id="plano-nivel" style="font-size: 12px; color: var(--text-dim); border-top: 1px solid #333; margin-top: 20px; padding-top: 10px;"></div>
-  </div>
-
-  <div class="card">
-    <h3>📈 Evolução Estimada (CEFR)</h3>
-    <div id="chart_div" style="width: 100%; height: 250px;"></div>
-  </div>
-
-  <div class="card">
-    <h3>📊 Calculadora de fluência</h3>
-    <span class="calc-intro">Estimativa baseada no nível atual e carga horária dedicada.</span>
-    <div id="calc-ui">
-      <select id="c-nivel"><option value="1">Iniciante (A1)</option><option value="2">Elementar (A2)</option><option value="3">Independente (B1)</option></select>
-      <input type="number" id="c-horas" value="1" style="width: 70px;" placeholder="h/dia">
-      <button class="btn btn-red" style="padding: 10px 20px; font-size: 13px;" onclick="calcularFluencia()">Calcular</button>
-    </div>
-    <div id="calc-result"></div>
-  </div>
-
-  <div class="footer-actions">
-    <a href="aulas.html" class="btn btn-red">Ver todas as aulas</a>
-    <a href="https://sites.google.com/view/languagelabbr/library" target="_blank" class="btn btn-outline">Biblioteca Digital</a>
-  </div>
-</div>
-
-<script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
-  const token = sessionStorage.getItem('bridge_token');
-
-  if (!token) { window.location.href = "index.html"; }
-
-  async function inicializar() {
     try {
-      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
-      const data = await response.json();
+        // A REQUISIÇÃO AGORA É PROTEGIDA COM TOKEN + SENHA
+        const url = `${API_URL}?action=getDados&token=${token}&senha=${senha}`;
+        const response = await fetch(url);
+        const data = await response.json();
 
-      if (data.success) {
-        const a = data.db.alunos[0];
-        document.getElementById('nome-aluno').innerText = a.nome;
-        document.getElementById('b-nivel').innerText = a.ultimo_nivel;
-        document.getElementById('b-perfil').innerText = a.perfil_ap;
-        document.getElementById('b-status').innerText = a.status_matricula;
-        document.getElementById('b-reagendar').innerText = a.reagendar || 0;
-        document.getElementById('aula-tema').innerText = a.ultima_aula_tema || 'Nenhuma registrada';
-        document.getElementById('aula-obs').innerText = a.observacoes || 'Aguardando feedback da última sessão.';
+        if (data.success) {
+            console.log("Dados carregados com segurança.");
+            
+            // Aqui você chama as funções que já existem no seu projeto para desenhar na tela
+            // Exemplo: renderizarTabelas(data.db);
+            // Exemplo: mostrarSugestoes(data.sugestoes);
+            
+            // Se o seu código usa uma função global de inicialização, chame-a aqui passando 'data'
+            inicializarInterface(data); 
 
-        gerarSugestoesLocal(a.perfil_ap, a.ultimo_nivel);
-
-        google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawChart);
-
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('main-container').classList.add('fade-in');
-      }
-    } catch (e) { console.error(e); logout(); }
-  }
-
-  function gerarSugestoesLocal(perfil, nivel) {
-    const p = perfil ? perfil.toLowerCase() : "";
-    let sugestoes = [];
-    let titulo = "Foco em imersão e input compreensível";
-
-    if (p.includes("visual")) {
-      sugestoes = ["Utilizar Flashcards com imagens (Anki/Quizlet)", "Assistir vídeos com legendas em Inglês", "Mapas mentais para gramática"];
-    } else if (p.includes("auditivo")) {
-      sugestoes = ["Prática de Shadowing (repetir após o áudio)", "Escuta ativa de Podcasts (10min/dia)", "Gravar sua própria voz e comparar"];
-    } else {
-      sugestoes = ["Escrever exemplos reais do seu dia a dia", "Digitar textos ouvindo o áudio simultaneamente", "Interagir com ferramentas de IA via voz"];
+        } else {
+            // Se a senha estiver errada ou o acesso for negado pelo servidor
+            alert("Acesso negado ou sessão expirada. Faça login novamente.");
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    } catch (error) {
+        console.error("Erro ao carregar dashboard:", error);
+        document.getElementById('status-error').innerText = "Erro ao carregar dados do servidor.";
     }
+}
 
-    document.getElementById('plano-desc').innerText = titulo;
-    document.getElementById('plano-lista').innerHTML = sugestoes.map(s => `<li>${s}</li>`).join('');
-    document.getElementById('plano-nivel').innerText = `Sugestão adaptada para o nível ${nivel}`;
-  }
-
-  function drawChart() {
-    const data = google.visualization.arrayToDataTable([['Meses', 'Nível'], [0, 0], [4, 1], [9, 2], [18, 3], [30, 4]]);
-    const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-    chart.draw(data, { 
-      curveType: 'function', colors: ['#c20000'], legend: 'none', backgroundColor: 'transparent',
-      hAxis: { textStyle: { color: '#b3b3b3' }, gridlines: { color: '#333' } },
-      vAxis: { textStyle: { color: '#b3b3b3' }, ticks: [{v:0,f:'A1'},{v:1,f:'A2'},{v:2,f:'B1'},{v:3,f:'B2'},{v:4,f:'C1'}] },
-      chartArea: { width: '85%', height: '80%' }
-    });
-  }
-
-  function calcularFluencia() {
-    const nivel = parseInt(document.getElementById('c-nivel').value);
-    const horas = parseFloat(document.getElementById('c-horas').value);
-    let meses = (nivel === 1) ? 30 : (nivel === 2) ? 20 : 12;
-    const final = Math.ceil(meses / (horas || 1));
-    document.getElementById('calc-ui').style.display = 'none';
-    const resDiv = document.getElementById('calc-result');
-    resDiv.style.display = 'block';
-    resDiv.innerHTML = `Estimativa: ${final} meses para fluência plena.<br><button class="btn btn-outline" style="margin-top:10px; padding: 5px 15px; font-size: 11px" onclick="resetCalc()">Recalcular</button>`;
-  }
-
-  function resetCalc() {
-    document.getElementById('calc-ui').style.display = 'block';
-    document.getElementById('calc-result').style.display = 'none';
-  }
-
-  function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
-</script>
-</body>
-</html>
+// Chama a função assim que a página carregar
+window.onload = carregarDadosDashboard;
