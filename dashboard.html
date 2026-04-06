@@ -161,14 +161,16 @@
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbwoMQolodkRhFOUhC2HQRBqRedZioxXT33dOWLSLoNcYJEJ40C2zszh54Lp8xsxcxtmXA/exec";
   const token = sessionStorage.getItem('bridge_token');
+  const senha = sessionStorage.getItem('bridge_senha');
 
-  if (!token) { window.location.href = "index.html"; }
+  if (!token || !senha) { logout(); }
 
   async function inicializar() {
     try {
-      const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+      // Requisição protegida enviando token E senha
+      const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
       const data = await response.json();
 
       if (data.success) {
@@ -188,6 +190,9 @@
 
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('main-container').classList.add('fade-in');
+      } else {
+        // Se a API retornar erro de validação, expulsa o usuário
+        logout();
       }
     } catch (e) { console.error(e); logout(); }
   }
