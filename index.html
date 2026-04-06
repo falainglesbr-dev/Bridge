@@ -127,7 +127,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwoMQolodkRhFOUhC2HQRBqRedZioxXT33dOWLSLoNcYJEJ40C2zszh54Lp8xsxcxtmXA/exec";
 
         async function tentarLogin() {
             const tokenInput = document.getElementById('token').value.trim();
@@ -159,6 +159,7 @@
                     // Salva sessão no navegador (limpa ao fechar aba)
                     sessionStorage.setItem('bridge_token', data.token);
                     sessionStorage.setItem('bridge_nome', data.nome);
+                    sessionStorage.setItem('bridge_senha', senhaInput); // SALVA A SENHA PARA ACESSO AOS DADOS
                     
                     // Redireciona para Dashboard
                     window.location.href = "dashboard.html";
