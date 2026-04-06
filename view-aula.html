@@ -148,17 +148,19 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwlmjq6VICkQchHjyohPdYoUi-Geo2h1OAkathQXsUC7FXmUiW2F_ZX9QsSfxC68D-m/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwoMQolodkRhFOUhC2HQRBqRedZioxXT33dOWLSLoNcYJEJ40C2zszh54Lp8xsxcxtmXA/exec";
     const token = sessionStorage.getItem('bridge_token');
+    const senha = sessionStorage.getItem('bridge_senha');
 
     async function carregarDetalhesAula() {
         const urlParams = new URLSearchParams(window.location.search);
         const aulaId = urlParams.get('id');
 
-        if (!token || !aulaId) { window.location.href = "index.html"; return; }
+        if (!token || !senha || !aulaId) { window.location.href = "index.html"; return; }
 
         try {
-            const response = await fetch(`${API_URL}?action=getDados&token=${token}`);
+            // Requisição enviando token e senha para validação no Apps Script
+            const response = await fetch(`${API_URL}?action=getDados&token=${token}&senha=${senha}`);
             const data = await response.json();
 
             if (data.success) {
@@ -200,10 +202,17 @@
 
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('main-content').style.display = 'block';
+                } else {
+                    // Aula não encontrada
+                    window.location.href = "aulas.html";
                 }
+            } else {
+                // Erro de autenticação/senha na API
+                window.location.href = "index.html";
             }
         } catch (error) {
             console.error("Erro:", error);
+            window.location.href = "aulas.html";
         }
     }
 </script>
